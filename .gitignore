@@ -1,0 +1,22 @@
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+.packages
+pubspec.lock
+
+# IDE specific
+.idea/
+.vscode/
+*.iml
+
+# Azure Functions
+local.settings.json
+.env
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
