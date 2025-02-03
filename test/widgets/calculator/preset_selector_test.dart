@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:BeyondHorizonCalc/widgets/calculator/preset_selector.dart';
-import 'package:BeyondHorizonCalc/models/line_of_sight_preset.dart';
+import 'package:beyondhorizoncalc_api/widgets/calculator/preset_selector.dart';
+import 'package:beyondhorizoncalc_api/models/line_of_sight_preset.dart';
 
 void main() {
   group('PresetSelector', () {

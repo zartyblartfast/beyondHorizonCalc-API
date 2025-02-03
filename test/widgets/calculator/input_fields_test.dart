@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:BeyondHorizonCalc/widgets/calculator/input_fields.dart';
+import 'package:beyondhorizoncalc_api/widgets/calculator/input_fields.dart';
 
 void main() {
   group('InputFields', () {

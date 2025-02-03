@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "PYTHONPATH": "c:/Users/clive/VSC/BeyondHorizonCalc-API",
+    "AZURE_FUNCTIONS_PATH": "c:/Users/clive/VSC/BeyondHorizonCalc-API"
+  }
+}

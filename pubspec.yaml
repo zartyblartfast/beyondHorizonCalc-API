@@ -1,5 +1,5 @@
-name: BeyondHorizonCalc
-description: "Earth curvature calculator that helps visualize and calculate the effects of Earth's curvature on visibility"
+name: beyondhorizoncalc_api
+description: "API-enabled version of the Earth curvature calculator that helps visualize and calculate the effects of Earth's curvature on visibility"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,6 +40,7 @@ dependencies:
   url_launcher_web: ^2.2.2  # For web support
 
 dev_dependencies:
+  test: ^1.24.0
   flutter_test:
     sdk: flutter
   mockito: ^5.4.4

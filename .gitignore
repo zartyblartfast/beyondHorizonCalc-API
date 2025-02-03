@@ -5,6 +5,7 @@
 build/
 .packages
 pubspec.lock
+.metadata
 
 # IDE specific
 .idea/
@@ -20,3 +21,37 @@ local.settings.json
 
 # Windows
 Thumbs.db
+ehthumbs.db
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.env
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+*.egg
+
+# Test files
+test_results.log
+.coverage
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml

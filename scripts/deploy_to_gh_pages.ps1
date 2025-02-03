@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
 param(
-    [string]$DevBranch = "dev2",                                  # The branch you develop on
+    [string]$DevBranch = "dev1",                                  # The branch you develop on
     [string]$GhPagesBranch = "gh-pages",                         # The branch that hosts the GitHub Pages
     [string]$TempBuildDir = "C:\Users\clive\VSC\temp_web_build", # Absolute path to temp directory
     [switch]$Force                                                # Force deployment without confirmations

@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:BeyondHorizonCalc/services/curvature_calculator.dart';
-import 'package:BeyondHorizonCalc/services/models/calculation_result.dart';
+import 'package:test/test.dart';
+import '../../lib/services/curvature_calculator.dart';
+import '../../lib/services/models/calculation_result.dart';
 import 'dart:math' as math;
 
 void main() {
@@ -19,6 +19,7 @@ void main() {
         observerHeight: observerHeight,
         distance: distance,
         refractionFactor: refractionFactor,
+        isMetric: true,
       );
       
       // Then: horizon distance should match expected value
@@ -44,6 +45,7 @@ void main() {
         distance: distance,
         refractionFactor: refractionFactor,
         targetHeight: targetHeight,
+        isMetric: true,
       );
       
       // Then: hidden height should be positive and less than target height
@@ -51,10 +53,10 @@ void main() {
       expect(result.hiddenHeight, lessThan(targetHeight));
     });
 
-    test('handles error case when angle exceeds 90 degrees', () {
-      // Given: extreme distance causing angle > 90 degrees
+    test('handles error case when distance exceeds maximum', () {
+      // Given: distance beyond maximum allowed
       const double observerHeight = 2.0;     // meters
-      const double distance = 20000.0;       // kilometers
+      const double distance = 601.0;         // kilometers (beyond MAX_DISTANCE of 600km)
       const double refractionFactor = 1.07;
       
       // When: calculating curvature
@@ -62,6 +64,7 @@ void main() {
         observerHeight: observerHeight,
         distance: distance,
         refractionFactor: refractionFactor,
+        isMetric: true,
       );
       
       // Then: should return zero values
@@ -74,7 +77,7 @@ void main() {
     test('calculates visible target height correctly', () {
       // Given: realistic observation scenario
       const double observerHeight = 2.0;     // meters
-      const double distance = 10.0;          // kilometers (increased to be beyond horizon)
+      const double distance = 10.0;          // kilometers
       const double refractionFactor = 1.07;
       const double targetHeight = 100.0;     // meters
       
@@ -84,6 +87,7 @@ void main() {
         distance: distance,
         refractionFactor: refractionFactor,
         targetHeight: targetHeight,
+        isMetric: true,
       );
       
       // Then: visible height should be less than total target height
@@ -103,6 +107,7 @@ void main() {
         observerHeight: observerHeight,
         distance: distance,
         refractionFactor: refractionFactor,
+        isMetric: true,
       );
       
       // Then: target-related values should be zero
@@ -113,7 +118,7 @@ void main() {
     test('total distance is sum of horizon distance and beyond', () {
       // Given: standard observation parameters
       const double observerHeight = 2.0;     // meters
-      const double distance = 5.0;           // kilometers
+      const double distance = 10.0;          // kilometers (well above MIN_DISTANCE of 5km)
       const double refractionFactor = 1.07;
       
       // When: calculating curvature
@@ -121,6 +126,7 @@ void main() {
         observerHeight: observerHeight,
         distance: distance,
         refractionFactor: refractionFactor,
+        isMetric: true,
       );
       
       // Then: total distance should be greater than horizon distance

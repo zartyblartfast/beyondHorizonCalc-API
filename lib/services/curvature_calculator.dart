@@ -4,6 +4,13 @@ import 'models/calculation_result.dart';
 class CurvatureCalculator {
   static const double EARTH_RADIUS_METERS = 6371000;
 
+  // Range limits (matching Python API)
+  static const double MIN_OBSERVER_HEIGHT = 2.0;    // meters
+  static const double MAX_OBSERVER_HEIGHT = 9000.0; // meters
+  static const double MIN_DISTANCE = 5.0;           // kilometers
+  static const double MAX_DISTANCE = 600.0;         // kilometers
+  static const double MAX_TARGET_HEIGHT = 9000.0;   // meters
+
   /// Calculates earth curvature effects based on input parameters
   /// 
   /// [observerHeight] Height of observer in meters (metric) or feet (imperial)
@@ -24,10 +31,28 @@ class CurvatureCalculator {
 
     // Convert all inputs to meters for calculation
     final double heightMeters = isMetric ? observerHeight : observerHeight * 0.3048;
-    final double distanceMeters = isMetric ? distance * 1000 : distance * 1609.34;
+    final double distanceKm = isMetric ? distance : distance * 1.60934;  // Convert to km first
+    final double distanceMeters = distanceKm * 1000;
     final double? targetHeightMeters = targetHeight == null 
         ? null 
         : (isMetric ? targetHeight : targetHeight * 0.3048);
+
+    // Validate inputs against range limits
+    if (heightMeters < MIN_OBSERVER_HEIGHT || heightMeters > MAX_OBSERVER_HEIGHT ||
+        distanceKm < MIN_DISTANCE || distanceKm > MAX_DISTANCE ||
+        (targetHeightMeters != null && (targetHeightMeters < 0 || targetHeightMeters > MAX_TARGET_HEIGHT))) {
+      return CalculationResult(
+        horizonDistance: 0,
+        hiddenHeight: 0,
+        totalDistance: 0,
+        visibleDistance: 0,
+        visibleTargetHeight: 0,
+        apparentVisibleHeight: 0,
+        perspectiveScaledHeight: 0,
+        inputDistance: distance,
+        h1: observerHeight,
+      );
+    }
 
     // Print intermediate values for debugging
     print('Input distance: $distance km');
@@ -47,6 +72,21 @@ class CurvatureCalculator {
     // Calculate BOX angle
     final double BOX_fraction = l2 / C;
     final double BOX_angle = 2 * math.pi * BOX_fraction;
+    
+    // Check if angle exceeds 90 degrees (pi/2 radians)
+    if (BOX_angle > math.pi / 2) {
+      return CalculationResult(
+        horizonDistance: 0,
+        hiddenHeight: 0,
+        totalDistance: 0,
+        visibleDistance: 0,
+        visibleTargetHeight: 0,
+        apparentVisibleHeight: 0,
+        perspectiveScaledHeight: 0,
+        inputDistance: distance,
+        h1: observerHeight,
+      );
+    }
     
     // Calculate OC and hidden height (XC)
     final double OC = R / math.cos(BOX_angle);

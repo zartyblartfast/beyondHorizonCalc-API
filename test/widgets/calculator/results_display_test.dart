@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:BeyondHorizonCalc/widgets/calculator/results_display.dart';
-import 'package:BeyondHorizonCalc/services/models/calculation_result.dart';
+import 'package:beyondhorizoncalc_api/widgets/calculator/results_display.dart';
+import 'package:beyondhorizoncalc_api/services/models/calculation_result.dart';
 
 void main() {
   group('ResultsDisplay', () {
