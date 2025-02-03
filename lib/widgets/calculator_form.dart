@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../services/curvature_calculator.dart';
+import '../services/curvature/curvature_calculator.dart';
 import '../services/models/calculation_result.dart';
+import '../services/models/calculation_error.dart';
 import '../models/line_of_sight_preset.dart';
 import 'calculator/preset_selector.dart';
 import 'calculator/input_fields.dart';
 import 'calculator/results_display.dart';
 import 'calculator/diagram_display.dart';
+import 'calculator/api_toggle.dart';
 import 'long_line_info_dialog.dart';
 
 class CalculatorForm extends StatefulWidget {
@@ -24,6 +26,8 @@ class _CalculatorFormState extends State<CalculatorForm> {
   final _presetSelectorKey = GlobalKey();
 
   bool _isMetric = true;
+  bool _useApiCalculations = false;
+  bool _isCalculating = false;
   LineOfSightPreset? _selectedPreset;
   CalculationResult? _result;
   PresetSelector? _presetSelector;
@@ -31,25 +35,27 @@ class _CalculatorFormState extends State<CalculatorForm> {
   @override
   void initState() {
     super.initState();
-    print('CalculatorForm - initState called');
+    print(' [INIT] CalculatorForm initState called');
     _initializeForm();
   }
 
   Future<void> _initializeForm() async {
-    print('CalculatorForm - _initializeForm started');
+    print(' [INIT] _initializeForm started');
     // Initialize with empty result to avoid null errors
     _result = const CalculationResult();
+    print(' [INIT] Empty result initialized');
 
     // Load presets first
     final presets = await LineOfSightPreset.loadPresets();
-    print('CalculatorForm - Loaded ${presets.length} presets');
+    print(' [INIT] Loaded ${presets.length} presets');
     
     if (presets.isNotEmpty && mounted) {
       // Set initial preset
       _selectedPreset = presets.first;
-      print('CalculatorForm - Setting initial preset: ${_selectedPreset?.name}');
+      print(' [INIT] Selected first preset: ${_selectedPreset?.name}');
 
       setState(() {
+        print(' [INIT] Updating controllers with preset values');
         // Initialize controllers with preset values
         final observerHeight =
             _isMetric ? _selectedPreset!.observerHeight : _selectedPreset!.observerHeight * 3.28084;
@@ -62,22 +68,29 @@ class _CalculatorFormState extends State<CalculatorForm> {
         _targetHeightController.text =
             _selectedPreset!.targetHeight?.toString() ?? '';
 
-        print('CalculatorForm - Controllers initialized with preset values');
+        print(' [INIT] Controller values set:');
+        print(' [INIT] - Observer Height: ${_observerHeightController.text}');
+        print(' [INIT] - Distance: ${_distanceController.text}');
+        print(' [INIT] - Refraction Factor: ${_refractionFactorController.text}');
+        print(' [INIT] - Target Height: ${_targetHeightController.text}');
       });
 
       // Create PresetSelector with initial preset
       _presetSelector = PresetSelector(
         key: _presetSelectorKey,
-        selectedPreset: _selectedPreset,  // Now this has the first preset
+        selectedPreset: _selectedPreset,
         onPresetChanged: _handlePresetChanged,
       );
+      print(' [INIT] PresetSelector created');
 
       // Calculate initial results
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        print('CalculatorForm - Post-frame callback triggered');
+        print(' [INIT] Post-frame callback triggered');
+        print(' [INIT] About to call _handleCalculate');
         _handleCalculate();
       });
     } else {
+      print(' [INIT] No presets available');
       // Create PresetSelector with no selection if no presets available
       _presetSelector = PresetSelector(
         key: _presetSelectorKey,
@@ -88,7 +101,7 @@ class _CalculatorFormState extends State<CalculatorForm> {
   }
 
   void _handlePresetChanged(LineOfSightPreset? preset) {
-    print('CalculatorForm - Preset changed to: ${preset?.name ?? "Custom Values"}');
+    print(' [INIT] Preset changed to: ${preset?.name ?? "Custom Values"}');
     setState(() {
       _selectedPreset = preset;
       if (preset != null) {
@@ -101,17 +114,17 @@ class _CalculatorFormState extends State<CalculatorForm> {
             preset.refractionFactor.toStringAsFixed(2);
         _targetHeightController.text = preset.targetHeight?.toString() ?? '';
         
-        print('CalculatorForm - Updated controller values:');
-        print('Observer Height: ${_observerHeightController.text}');
-        print('Distance: ${_distanceController.text}');
-        print('Refraction Factor: ${_refractionFactorController.text}');
-        print('Target Height: ${_targetHeightController.text}');
+        print(' [INIT] Updated controller values:');
+        print(' [INIT] - Observer Height: ${_observerHeightController.text}');
+        print(' [INIT] - Distance: ${_distanceController.text}');
+        print(' [INIT] - Refraction Factor: ${_refractionFactorController.text}');
+        print(' [INIT] - Target Height: ${_targetHeightController.text}');
       }
     });
     
     // Always calculate, even for Custom Values
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('CalculatorForm - Calling _handleCalculate after preset change');
+      print(' [INIT] Calling _handleCalculate after preset change');
       _handleCalculate();
     });
   }
@@ -144,43 +157,85 @@ class _CalculatorFormState extends State<CalculatorForm> {
     });
   }
 
-  void _handleCalculate() {
-    print('CalculatorForm - _handleCalculate called');
+  Future<void> _handleCalculate() async {
+    print(' [CALC] _handleCalculate called');
     if (!_formKey.currentState!.validate()) {
-      print('CalculatorForm - Form validation failed');
+      print(' [CALC] Form validation failed');
+      setState(() {
+        _isCalculating = false;
+      });
       return;
     }
 
-    // Get values from controllers
-    final double observerHeight = double.parse(_observerHeightController.text);
-    final double distance = double.parse(_distanceController.text);
-    final double refractionFactor =
-        double.parse(_refractionFactorController.text);
-    final double? targetHeight = _targetHeightController.text.isEmpty
-        ? null
-        : double.parse(_targetHeightController.text);
-
-    print('CalculatorForm - Calculation inputs:');
-    print('Observer Height: $observerHeight');
-    print('Distance: $distance');
-    print('Refraction Factor: $refractionFactor');
-    print('Target Height: $targetHeight');
-    print('Is Metric: $_isMetric');
-
-    // Pass values in their original units (meters/feet and km/miles)
-    final result = CurvatureCalculator.calculate(
-      observerHeight: observerHeight,
-      distance: distance,
-      refractionFactor: refractionFactor,
-      targetHeight: targetHeight,
-      isMetric: _isMetric,
-    );
-
-    print('CalculatorForm - Calculation result: $result');
-
+    // Set loading state
     setState(() {
-      _result = result;
+      _isCalculating = true;
+      _result = null;  // Clear previous result while calculating
     });
+
+    try {
+      // Get values from controllers
+      final double observerHeight = double.parse(_observerHeightController.text);
+      final double distance = double.parse(_distanceController.text);
+      final double refractionFactor =
+          double.parse(_refractionFactorController.text);
+      final double? targetHeight = _targetHeightController.text.isEmpty
+          ? null
+          : double.parse(_targetHeightController.text);
+
+      print(' [CALC] Input values:');
+      print(' [CALC] - Observer Height: $observerHeight');
+      print(' [CALC] - Distance: $distance');
+      print(' [CALC] - Refraction Factor: $refractionFactor');
+      print(' [CALC] - Target Height: $targetHeight');
+      print(' [CALC] - Is Metric: $_isMetric');
+      print(' [CALC] - Using API: $_useApiCalculations');
+
+      // Pass values in their original units (meters/feet and km/miles)
+      final result = await CurvatureCalculator.calculate(
+        observerHeight: observerHeight,
+        distance: distance,
+        refractionFactor: refractionFactor,
+        targetHeight: targetHeight,
+        isMetric: _isMetric,
+        useApi: _useApiCalculations,
+      );
+
+      print(' [CALC] Calculation successful');
+      print(' [CALC] Result type: ${result.runtimeType}');
+      print(' [CALC] Result values:');
+      print(' [CALC] - horizonDistance: ${result.horizonDistance}');
+      print(' [CALC] - hiddenHeight: ${result.hiddenHeight}');
+      print(' [CALC] - visibleTargetHeight: ${result.visibleTargetHeight}');
+      print(' [CALC] - apparentVisibleHeight: ${result.apparentVisibleHeight}');
+      print(' [CALC] - perspectiveScaledHeight: ${result.perspectiveScaledHeight}');
+      print(' [CALC] - error: ${result.error}');
+      print(' [CALC] - isError: ${result.isError}');
+
+      if (mounted) {
+        setState(() {
+          _result = result;
+          _isCalculating = false;
+          print(' [CALC] State updated with result');
+        });
+      } else {
+        print(' [CALC] Widget not mounted, state update skipped');
+      }
+    } catch (e) {
+      print(' [CALC] Error during calculation: $e');
+      if (mounted) {
+        setState(() {
+          _isCalculating = false;
+          _result = CalculationResult.error(
+            CalculationError(
+              type: CalculationErrorType.apiError,
+              message: 'Calculation failed',
+              details: e.toString(),
+            ),
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -221,27 +276,53 @@ class _CalculatorFormState extends State<CalculatorForm> {
 
           // Create a single instance of ResultsDisplay
           final resultsDisplay = ResultsDisplay(
-            result: _result,
+            result: _isCalculating ? null : _result,
             isMetric: _isMetric,
             targetHeight: _targetHeightController.text.isEmpty
                 ? null
                 : double.parse(_targetHeightController.text),
           );
 
+          // Create API toggle
+          final apiToggle = ApiToggle(
+            useApiCalculations: _useApiCalculations,
+            onChanged: (value) async {
+              setState(() {
+                _useApiCalculations = value;
+              });
+              await _handleCalculate();
+            },
+          );
+
           Widget content = Column(
             children: [
               // Left side - Calculator inputs and results
               Card(
-                child: SingleChildScrollView(
+                child: Padding(
                   padding: contentPadding,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _presetSelector ?? const SizedBox.shrink(),
                       SizedBox(height: isMobile ? 8 : 16),
                       inputFields,
                       SizedBox(height: isMobile ? 8 : 16),
-                      resultsDisplay,
+                      // API toggle in its own card
+                      Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+                          child: apiToggle,
+                        ),
+                      ),
+                      SizedBox(height: isMobile ? 8 : 16),
+                      // Results in their own card
+                      Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+                          child: resultsDisplay,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -271,16 +352,31 @@ class _CalculatorFormState extends State<CalculatorForm> {
               children: [
                 Expanded(
                   child: Card(
-                    child: SingleChildScrollView(
+                    child: Padding(
                       padding: contentPadding,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _presetSelector ?? const SizedBox.shrink(),
                           SizedBox(height: isMobile ? 8 : 16),
                           inputFields,
                           SizedBox(height: isMobile ? 8 : 16),
-                          resultsDisplay,
+                          // API toggle in its own card
+                          Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+                              child: apiToggle,
+                            ),
+                          ),
+                          SizedBox(height: isMobile ? 8 : 16),
+                          // Results in their own card
+                          Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+                              child: resultsDisplay,
+                            ),
+                          ),
                         ],
                       ),
                     ),

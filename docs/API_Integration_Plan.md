@@ -1,180 +1,335 @@
-# Beyond Horizon Calculator - API Integration Test Plan
+# Beyond Horizon Calculator - API Integration Plan
 
 ## Overview
-This repository serves as a test harness for the Beyond Horizon Calculator API, containing a modified version of the Flutter app that can use both local and API calculations. This allows us to:
-1. Verify API functionality matches local calculations exactly
-2. Test API integration patterns for external consumers
-3. Ensure API completeness for Twitter Bot and AI Agent use cases
-4. Document integration patterns and best practices
+This repository contains a version of the Beyond Horizon Calculator app that integrates both local and API-based calculations. This implementation:
+1. Allows switching between local and API calculations via configuration
+2. Provides clear UI indication of calculation source
+3. Serves as a testing ground for API functionality
+4. Maintains calculation consistency between methods
 
-## Test Harness Architecture
+## Architecture
 
 ### Directory Structure
 ```
 lib/
 ├── services/
 │   ├── curvature/
-│   │   ├── curvature_calculator.dart         # Original local calculator
-│   │   ├── api_calculator.dart               # API client implementation
-│   │   └── calculator_test_harness.dart      # Test harness utilities
+│   │   ├── curvature_calculator.dart         # Base calculator interface
+│   │   ├── local_calculator.dart             # Local implementation
+│   │   └── api_calculator.dart               # API implementation
 │   └── models/
 │       └── calculation_result.dart           # Calculation result model
 ```
 
-### Test Harness Features
-1. Side-by-Side Calculation Comparison
-   - Run calculations through both local and API methods
-   - Compare results for exact matching
-   - Log any discrepancies
-   - Measure and log API response times
+### Configuration System
+```dart
+enum CalculationMode {
+  local,    // Use local calculations
+  api       // Use API calculations
+}
 
-2. API Integration Testing
-   - Test all API endpoints
-   - Verify error handling
-   - Test edge cases
-   - Validate response formats
+class CalculationConfig {
+  static CalculationMode mode = CalculationMode.local;
+}
+```
 
-3. External Consumer Simulation
-   - Simulate Twitter Bot usage patterns
-   - Test AI Agent interaction scenarios
-   - Verify rate limiting behavior
-   - Test error recovery patterns
+### Calculator Interface
+```dart
+abstract class BaseCalculator {
+  Future<CalculationResult> calculate({
+    required double observerHeight,
+    required double distance,
+    required double refractionFactor,
+    required bool isMetric,
+    double? targetHeight,
+  });
+}
+```
 
 ## Implementation Plan
 
-### Phase 1: Test Harness Setup
-1. Add API Client
-   - Implement API calls
-   - Match request/response formats
-   - Add logging
-   - Include timing measurements
+### Phase 1: Configuration Setup
+1. Add Configuration System
+   - Create CalculationMode enum
+   - Implement CalculationConfig service
+   - Add persistence for settings
 
-2. Add Comparison Logic
-   - Run parallel calculations
-   - Compare results
-   - Log differences
-   - Track API performance
+2. Update UI
+   - Add settings toggle for calculation source
+   - Add calculation source indicator below results
+   - Update results display for API status
 
-3. Add Test Utilities
-   - Result comparison tools
-   - Logging utilities
-   - Test data generators
-   - Performance tracking
-
-### Phase 2: Integration Testing
-1. Basic Calculations
-   - Test all calculation types
-   - Verify unit conversions
-   - Test input validation
-   - Compare precision/rounding
+### Phase 2: API Integration
+1. API Calculator Implementation
+   - Create BaseCalculator interface
+   - Implement ApiCalculator class
+   - Add error handling
+   - Handle network timeouts
 
 2. Error Handling
-   - Test invalid inputs
-   - Verify error messages
-   - Test network errors
-   - Validate error formats
+   - Show appropriate error messages
+   - Handle network errors gracefully
+   - Validate API responses
 
-3. Performance Testing
-   - Measure response times
-   - Test concurrent requests
-   - Verify rate limiting
-   - Document performance characteristics
+### Phase 3: Testing
+1. Calculation Verification
+   - Test both calculation methods
+   - Verify results match
+   - Test error scenarios
+   - Validate configuration
 
-### Phase 3: External Consumer Testing
-1. Twitter Bot Scenarios
-   - Test tweet-length responses
-   - Verify formatting
-   - Test rate limits
+2. Integration Testing
+   - Test network scenarios
+   - Verify error handling
+   - Test configuration persistence
+
+## API Integration
+
+### Quick Start Guide
+
+#### Prerequisites
+1. Python 3.8 or higher
+2. Node.js and npm
+3. Flutter SDK
+4. Azure Functions Core Tools v4
+
+#### Setup Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/zartyblartfast/beyondHorizonCalc-API.git
+   cd beyondHorizonCalc-API
+   ```
+
+2. **Set Up Python Environment**
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Configure Local Settings**
+   - Copy `local.settings.example.json` to `local.settings.json`
+   - Update settings if needed (default values work for local development)
+
+4. **Start the API Server**
+   ```bash
+   func start
+   ```
+   The API will be available at `http://localhost:7071/api/calculate`
+
+5. **Run the Flutter App**
+   ```bash
+   flutter pub get
+   flutter run -d chrome
+   ```
+
+### API Integration Status
+
+#### Completed Features
+1. **API Endpoint**
+   - Endpoint: `/api/calculate`
+   - Handles all curvature calculations
+   - Supports both metric and imperial units
+   - Input validation matches Flutter app limits
+
+2. **UI Integration**
+   - Toggle switch between local and API calculations
+   - Clear indication of calculation source
+   - Error handling with user-friendly messages
+   - Option to switch back to local calculations on API errors
+
+3. **Input Validation**
+   - Observer height: 2-9000m
+   - Distance: 5-600km
+   - Target height: up to 9000m
+   - Default refraction factor: 1.07
+
+#### Current Issues
+
+1. **UI Layout Bug** (Unresolved)
+   - When switching to API calculations, a grey rectangle appears and replaces the toggle button
+   - Issue occurs after successful API calls (not during error states)
+   - Attempted fixes:
+     - Adjusted layout constraints and padding
+     - Modified error handling in ResultsDisplay
+     - Tried synchronizing field names between API and Flutter app
+     - Issue persists despite these changes
+   - Root cause investigation ongoing
+
+2. **API Response Format**
+   - API returns camelCase fields (e.g., 'hiddenHeight')
+   - Flutter app has been updated to match this format
+   - Field mapping:
+     ```
+     horizonDistance -> distance to horizon
+     hiddenHeight -> hidden height (h2)
+     visibleTargetHeight -> visible height (h3)
+     apparentVisibleHeight -> apparent visible height
+     perspectiveScaledHeight -> perspective scaled height
+     ```
+
+## Code Changes History
+
+### Key File Modifications
+
+1. **results_display.dart**
+   ```dart
+   // Toggle button implementation in success state
+   Row(
+     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+     children: [
+       Text('Using ${useApiCalculations ? "API" : "local"} calculations'),
+       Switch(
+         value: useApiCalculations, 
+         onChanged: onCalculationModeChanged,
+       ),
+     ],
+   )
+
+   // Error state button
+   ElevatedButton(
+     onPressed: () => onCalculationModeChanged?.call(false),
+     child: const Text('Switch to Local Calculations'),
+   )
+   ```
+
+2. **api_calculator.dart**
+   ```dart
+   // API response parsing
+   return CalculationResult(
+     horizonDistance: data['horizonDistance']?.toDouble(),
+     hiddenHeight: data['hiddenHeight']?.toDouble(),
+     visibleTargetHeight: data['visibleTargetHeight']?.toDouble(),
+     apparentVisibleHeight: data['apparentVisibleHeight']?.toDouble(),
+     perspectiveScaledHeight: data['perspectiveScaledHeight']?.toDouble(),
+   );
+   ```
+
+3. **calculations.py (API)**
+   ```python
+   # API response format
+   result = {
+       'hiddenHeight': hidden_height,
+       'horizonDistance': horizon_distance_km,
+       'totalDistance': original_distance,
+       'dipAngle': dip_angle,
+       'isMetric': is_metric
+   }
+   ```
+
+### Recent Changes and Issues
+
+1. **Field Name Synchronization**
+   - Initially used snake_case in API (`hidden_height`)
+   - Changed to camelCase (`hiddenHeight`) to match existing code
+   - Updated Flutter app to expect camelCase fields
+   - Issue persists despite field name changes
+
+2. **UI Layout Investigation**
+   - Grey rectangle appears only after successful API response
+   - Toggle button disappears when grey rectangle appears
+   - Error state UI works correctly without grey rectangle
+   - Layout issue seems tied to successful response handling
+
+3. **Next Investigation Steps**
+   - Review widget tree when grey rectangle appears
+   - Check state management in ResultsDisplay
+   - Verify response parsing in success case
+   - Compare layouts between error and success states
+
+## UI Implementation
+
+### Settings Toggle
+```dart
+Switch(
+  value: CalculationConfig.mode == CalculationMode.api,
+  onChanged: (value) {
+    setState(() {
+      CalculationConfig.mode = value 
+          ? CalculationMode.api 
+          : CalculationMode.local;
+    });
+  },
+)
+```
+
+### Results Display
+```dart
+Column(
+  children: [
+    // Existing results display
+    Text(
+      'Using ${CalculationConfig.mode == CalculationMode.api 
+          ? "API" 
+          : "Local"} calculations',
+      style: Theme.of(context).textTheme.caption,
+    ),
+  ],
+)
+```
+
+## Error Handling
+1. Network Errors
+   - Show error message
+   - Allow retry
+   - Clear error on new calculation
+
+2. API Errors
+   - Display validation errors
+   - Show server errors
+   - Handle timeouts
+
+## Testing Requirements
+1. Functional Testing
+   - Verify both calculation methods
+   - Test configuration persistence
    - Validate error handling
 
-2. AI Agent Integration
-   - Test structured responses
-   - Verify data formats
-   - Test batch calculations
-   - Validate complex queries
-
-## Test Cases
-
-### Calculation Verification
-```dart
-void testCalculation({
-  required double observerHeight,
-  required double distance,
-  double? targetHeight,
-  bool isMetric = true,
-}) {
-  // Run local calculation
-  final localResult = CurvatureCalculator.calculate(...);
-  
-  // Run API calculation
-  final apiResult = await ApiCalculator.calculate(...);
-  
-  // Compare results
-  compareResults(localResult, apiResult);
-  
-  // Log performance
-  logApiPerformance(apiResult.responseTime);
-}
-```
-
-### Result Comparison
-```dart
-void compareResults(CalculationResult local, CalculationResult api) {
-  assert(local.hiddenHeight == api.hiddenHeight);
-  assert(local.horizonDistance == api.horizonDistance);
-  assert(local.dipAngle == api.dipAngle);
-  // ... more comparisons
-}
-```
-
-## Documentation Generation
-
-### API Consumer Documentation
-- Generate OpenAPI specification
-- Create integration examples
-- Document error handling
-- Provide rate limiting details
-
-### Performance Documentation
-- Document response times
-- Provide concurrent request limits
-- Detail rate limiting rules
-- List resource constraints
+2. Integration Testing
+   - Test network scenarios
+   - Verify API responses
+   - Test configuration changes
 
 ## Success Criteria
-1. Functional Completeness
-   - All calculations match local results
-   - All error cases handled correctly
-   - All external consumer scenarios supported
+1. Functionality
+   - Both calculation methods work correctly
+   - Configuration persists between sessions
+   - Error handling works as expected
 
-2. Documentation Quality
-   - Complete API documentation
-   - Clear integration examples
-   - Detailed error handling guide
-   - Performance characteristics documented
-
-3. Test Coverage
-   - All calculation types tested
-   - All error conditions verified
-   - All consumer scenarios validated
-   - Performance metrics collected
+2. User Experience
+   - Clear indication of calculation source
+   - Smooth switching between methods
+   - Appropriate error messages
 
 ## Next Steps
-1. Implement API client
-2. Add comparison logging
-3. Create test scenarios
-4. Document findings
-5. Validate external consumer use cases
+1. Implement configuration system
+2. Create API calculator
+3. Add UI elements
+4. Implement error handling
+5. Add tests
 
 ## Future Considerations
-1. Additional API Features
-   - Batch calculations
-   - Extended result formats
-   - Additional calculation types
-   - Performance optimizations
+1. API Documentation
+   - Document endpoint
+   - Provide integration examples
+   - Document error handling
 
-2. Integration Patterns
-   - OAuth authentication
-   - API key management
-   - Rate limiting strategies
-   - Caching recommendations
+2. External Consumers
+   - Twitter Bot integration
+   - AI Agent integration
+   - Performance monitoring
+
+## Troubleshooting
+
+1. **Common Issues**
+   - If API is unreachable, check if `func start` is running
+   - Verify CORS settings in `local.settings.json`
+   - Check browser console for error messages
+   - Ensure all dependencies are installed
+
+2. **Debug Steps**
+   - Enable verbose logging in Flutter app
+   - Monitor API responses in browser network tab
+   - Check Azure Functions logs
+   - Verify API endpoint configuration

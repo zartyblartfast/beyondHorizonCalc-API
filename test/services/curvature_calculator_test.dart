@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import '../../lib/services/curvature_calculator.dart';
+import '../../lib/services/curvature/curvature_calculator.dart';
 import '../../lib/services/models/calculation_result.dart';
 import 'dart:math' as math;
 
