@@ -1,346 +1,223 @@
-# Azure Functions Setup Guide
+# Beyond Horizon Calculator API Setup Guide
 
-## Initial Setup (2025-02-02)
+## Overview
+This document details the setup and configuration of the Beyond Horizon Calculator API, an Azure Functions-based service that calculates Earth curvature effects on visibility. The API supports both metric and imperial units and provides comprehensive calculations including horizon distance, hidden height, and geometric dip angle.
 
-### Prerequisites
+## Prerequisites
 - Active Microsoft Azure Account
 - Visual Studio Code
 - Windows OS
 - Python 3.9+ (required for Azure Functions)
 - Dart SDK (for running tests)
+- Azure Functions Core Tools
+- Git
 
-### Project Structure
-
-The project follows Azure Functions best practices with a clear separation of concerns:
-
+## Project Structure
 ```
 BeyondHorizonCalc-API/
-├── api/                    # Legacy API code (deprecated)
-├── calculate/              # Main Function App
-│   ├── __init__.py        # HTTP trigger and request handling
-│   ├── calculations.py    # Core calculation logic
-│   ├── constants.py       # Configuration constants
-│   ├── function.json      # Function binding configuration
-│   └── requirements.txt   # Python dependencies
-├── docs/                  # Documentation
-├── host.json             # Host configuration
-├── local.settings.json   # Local settings and connection strings
-└── requirements.txt      # Project-level dependencies
+├── calculate/                 # Main Function App
+│   ├── __init__.py           # HTTP trigger and request handling
+│   ├── calculations.py       # Core calculation logic
+│   ├── constants.py          # Configuration constants
+│   ├── function.json         # Function binding configuration
+│   └── local.settings.json   # Function-specific settings
+├── tests/                    # Python unit tests
+│   ├── __init__.py
+│   ├── test_calculations.py  # Core calculation tests
+│   └── test_api.py          # API endpoint tests
+├── test/                     # Dart integration tests
+├── docs/                     # Documentation
+├── host.json                 # Host configuration
+├── local.settings.json       # Local settings and connection strings
+└── requirements.txt          # Project-level dependencies
 ```
 
-#### Directory Roles
-1. `/calculate` (Active)
-   - Primary Function App directory
-   - Contains all calculation logic and API endpoints
-   - Follows Azure Functions v2 programming model
-   - Uses in-process function execution
+## Initial Setup
 
-2. `/api` (Deprecated)
-   - Legacy implementation using older Azure Functions model
-   - Kept for reference but not actively used
-   - Will be removed in future updates
+### 1. Environment Setup
+1. Install Python 3.9+:
+   ```powershell
+   winget install Python.Python.3.9
+   ```
 
-#### Best Practices Implementation
-1. **Code Organization**
-   - Clear separation between HTTP handling (`__init__.py`) and business logic (`calculations.py`)
-   - Constants isolated in `constants.py` for easy configuration
-   - Each function in its own directory with its configuration
-
-2. **Configuration Management**
-   - Function-specific settings in `function.json`
-   - Host-level settings in `host.json`
-   - Environment variables in `local.settings.json`
-
-3. **Dependency Management**
-   - Function-level dependencies in `/calculate/requirements.txt`
-   - Project-level dependencies in root `requirements.txt`
-   - Virtual environment isolation
-
-4. **Documentation**
-   - API documentation in `/docs`
-   - Inline code documentation
-   - Setup and configuration guides
-
-### 1. VS Code Extension Installation
-1. Open VS Code Extensions (Ctrl+Shift+X)
-2. Search for "Azure Functions"
-3. Install the official Microsoft extension:
-   - Name: Azure Functions
-   - Publisher: Microsoft
-   - ID: ms-azuretools.vscode-azurefunctions
-   - Description: Azure Functions extension for VS Code that helps create, debug, manage, and deploy serverless apps
-
-### 2. Azure Functions Core Tools Installation
-1. Open PowerShell as Administrator
-2. Install using Windows Package Manager (winget):
+2. Install Azure Functions Core Tools:
    ```powershell
    winget install Microsoft.Azure.FunctionsCoreTools
    ```
-3. Version installed: 4.0.6821
 
-### 3. Azure CLI Installation
-1. Open PowerShell as Administrator
-2. Install using Windows Package Manager (winget):
+3. Install VS Code Extensions:
+   - Azure Functions (ms-azuretools.vscode-azurefunctions)
+   - Python (ms-python.python)
+   - Dart (Dart-Code.dart-code)
+
+### 2. Project Setup
+1. Clone the repository:
    ```powershell
-   winget install Microsoft.AzureCLI
+   git clone https://github.com/zartyblartfast/beyondHorizonCalc-API.git
+   cd beyondHorizonCalc-API
    ```
 
-### Next Steps
-1. Restart VS Code for tools initialization
-2. Sign in to Azure through VS Code:
-   - Click Azure icon in Activity Bar
-   - Click "Sign in to Azure"
-   - Complete authentication process
-
-### Python Development Setup
-1. Install Python 3.9+ (required for Azure Functions)
-2. Install Python extension for VS Code
-3. Create Python-based Azure Functions project:
-   ```bash
-   func init MyFunctionProj --python
-   cd MyFunctionProj
-   func new --name HttpExample --template "HTTP trigger"
-   ```
-4. Set up virtual environment:
-   ```bash
+2. Create Python virtual environment:
+   ```powershell
    python -m venv .venv
    .venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```powershell
    pip install -r requirements.txt
    ```
 
-### Required Python Packages
-- azure-functions
-- tweepy (for Twitter bot integration)
-- numpy (for calculations)
-- python-dotenv (for environment variables)
+4. Configure local settings:
+   - Copy `.env.template` to `.env`
+   - Copy template settings to `local.settings.json`:
+   ```json
+   {
+       "IsEncrypted": false,
+       "Values": {
+           "FUNCTIONS_WORKER_RUNTIME": "python",
+           "AzureWebJobsStorage": "UseDevelopmentStorage=true"
+       }
+   }
+   ```
 
-### Important Notes
-- Using Python for better integration with:
-  - Twitter API (via tweepy)
-  - AI/ML libraries
-  - Mathematical computations
-- Local testing environment crucial before deployment
-- All development will be done on 'dev1' branch
+## API Configuration
 
-## Progress Update (2025-02-02 20:20)
+### 1. Core Calculation Setup
+The API is built around the `CurvatureCalculator` class in `calculate/calculations.py`, which handles:
+- Horizon distance calculation
+- Hidden height calculation
+- Geometric dip angle calculation
+- Target visibility calculation
+- Unit conversion (metric/imperial)
 
-### Completed Steps
-1. ✅ VS Code restarted after tools installation
-2. ✅ Azure Functions project initialized
-3. ✅ Created `calculate` HTTP trigger endpoint
-4. ✅ Python virtual environment set up
-5. ✅ Core dependencies installed:
-   - azure-functions
-
-### Next Steps
-1. Port calculation logic from Flutter:
-   - Review existing Flutter calculation code
-   - Convert to Python implementation
-   - Implement input validation
-   - Structure JSON response format
-
-2. Test local development:
-   - Test endpoint with sample requests
-   - Verify calculation accuracy
-   - Document API interface
-
-3. Twitter Bot Integration:
-   - Install tweepy and python-dotenv
-   - Create webhook endpoint
-   - Implement bot logic
-
-## Project Status (2025-02-02)
-
-### Completed
-1. Project Structure
-   - Azure Functions project initialized
-   - Python virtual environment set up
-   - Core dependencies installed
-
-2. API Implementation
-   - Single consolidated `/api/calculate` endpoint
-   - Input validation matching Flutter app limits
-   - Unit conversion support (metric/imperial)
-   - All calculations ported including geometric dip angle
-   - Error handling and validation messages
-
-3. Configuration
-   - `host.json` configured
-   - Python runtime selected
-   - Port configuration (7072)
-
-### Current Issues
-1. Integration Testing
-   - Need to update test suite to use regular Dart test package instead of Flutter test
-   - Test runner encountering Flutter UI dependency issues
-   - API validation tests need to be implemented
-
-### Next Steps
-1. Testing Setup
-   - [ ] Convert integration tests from Flutter to regular Dart tests
-   - [ ] Add test cases for input validation
-   - [ ] Add test cases for geometric dip angle
-   - [ ] Verify unit conversions
-
-2. API Testing
-   - [ ] Test all error conditions
-   - [ ] Verify response format matches documentation
-   - [ ] Compare results with Flutter app calculations
-
-3. Documentation
-   - [ ] Add API usage examples
-   - [ ] Document error responses
-   - [ ] Add deployment instructions
-
-### Current Project Structure
-```
-api/
-├── .venv/                 # Python virtual environment
-├── calculate/            # Calculation endpoint
-├── function_app.py       # Main application file
-├── host.json            # Host configuration
-├── local.settings.json  # Local settings
-└── requirements.txt     # Python dependencies
+### 2. Input Validation
+Constants in `calculate/constants.py` define the valid ranges:
+```python
+MIN_OBSERVER_HEIGHT = 2.0    # meters
+MAX_OBSERVER_HEIGHT = 9000.0 # meters
+MIN_DISTANCE = 5.0          # kilometers
+MAX_DISTANCE = 600.0        # kilometers
+MAX_TARGET_HEIGHT = 9000.0  # meters
 ```
 
-### Detailed Setup Commands Used
-```bash
-# 1. Project Initialization
-cd c:\Users\clive\VSC\BeyondHorizonCalc-API
-func init --worker-runtime python --language python
-
-# 2. Virtual Environment Setup
-cd api
-python -m venv .venv
-.venv\Scripts\activate
-
-# 3. Dependencies Installation
-pip install azure-functions
-
-# 4. Create Calculation Endpoint
-func new --name calculate --template "HTTP trigger"
-# Selected authentication level: Function
-```
-
-### Configuration Files
-1. `host.json` - Default configuration:
+### 3. API Endpoint
+The `/calculate` endpoint accepts JSON requests:
 ```json
 {
-    "version": "2.0",
-    "logging": {
-        "applicationInsights": {
-            "samplingSettings": {
-                "isEnabled": true,
-                "excludedTypes": "Request"
-            }
-        }
-    }
+    "observerHeight": 2.0,      // meters (required)
+    "distance": 10.0,           // kilometers (required)
+    "targetHeight": 100.0,      // meters (optional)
+    "refractionFactor": 1.07,   // optional, defaults to 1.07
+    "isMetric": true           // optional, defaults to true
 }
 ```
 
-2. `local.settings.json` template:
+Response format:
 ```json
 {
-    "IsEncrypted": false,
-    "Values": {
-        "FUNCTIONS_WORKER_RUNTIME": "python",
-        "AzureWebJobsStorage": ""
-    }
+    "hiddenHeight": 7.335,           // meters
+    "horizonDistance": 5.222,        // km if metric, miles if not
+    "totalDistance": 10.000,         // km if metric, miles if not
+    "dipAngle": 0.0454,             // degrees
+    "isMetric": true,               // units flag
+    "visibleTargetHeight": 92.665,   // meters (if target_height provided)
+    "apparentVisibleHeight": 92.593, // meters (if target_height provided)
+    "perspectiveScaledHeight": 99.922, // meters (if target_height provided)
+    "targetVisible": true            // boolean (if target_height provided)
 }
 ```
 
-### Local Development
-1. Start local server:
-```bash
-func start
+## Testing Setup
+
+### 1. Python Tests
+Located in `/tests/`, covering core calculations and API functionality:
+
+1. Run tests:
+   ```powershell
+   python -m unittest tests/test_calculations.py -v
+   ```
+
+2. Test coverage:
+   - Horizon distance calculation
+   - Hidden height calculation
+   - Dip angle calculation
+   - Unit conversion
+   - Input validation
+   - Complete calculation output
+
+Example test output:
 ```
-2. Default endpoints:
-   - Local URL: http://localhost:7071
-   - Calculate endpoint: http://localhost:7071/api/calculate
+Horizon Distance Test Results:
+Expected horizon distance: 5.222 km
+Actual horizon distance:   5.222 km
 
-### Local Development and Testing
+Hidden Height Test Results:
+Total distance: 10.000 km
+Hidden height: 7.335 m
 
-### Running the API Locally
-1. Navigate to the API directory:
-   ```bash
-   cd BeyondHorizonCalc-API
+Dip Angle Test Results:
+Observer height: 2.0 m
+Expected dip angle: 0.0454°
+Actual dip angle:   0.0454°
+```
+
+### 2. Dart Integration Tests
+Located in `/test/`, providing end-to-end testing with the Flutter app:
+
+1. Run tests:
+   ```powershell
+   dart test test/services/curvature_calculator_test.dart -r expanded
    ```
 
-2. Start the Functions host:
-   ```bash
-   func start --verbose
-   ```
-   - Default port is 7071
-   - Use `--port <number>` to specify a different port if needed
-   - Use `--verbose` flag for detailed logging
+2. Test coverage:
+   - API endpoint integration
+   - JSON serialization/deserialization
+   - Error handling
+   - Unit conversion consistency
 
-### Running Integration Tests
-1. Navigate to the test project:
-   ```bash
-   cd BeyondHorizonCalc
-   ```
+## Deployment
 
-2. Update the API port in `test/integration/api_test.dart` if needed:
-   ```dart
-   const String apiBaseUrl = 'http://localhost:<port>/api';
+### 1. Local Development
+1. Start the Function App:
+   ```powershell
+   func start
    ```
+2. API will be available at: `http://localhost:7071/api/calculate`
 
-3. Run the tests:
-   ```bash
-   dart test test/integration/api_test.dart --chain-stack-traces
+### 2. Azure Deployment
+1. Create Azure Function App:
+   ```powershell
+   az functionapp create --name BeyondHorizonCalc --storage-account <account> --consumption-plan-location westus --runtime python
    ```
 
-### Test Categories
-The test suite includes:
-1. Basic Calculations
-   - Minimum valid observer height
-   - Standard observation scenario
-   - Imperial unit conversion
+2. Deploy using VS Code:
+   - Click Azure icon
+   - Right-click subscription
+   - Select "Deploy to Function App"
+   - Choose BeyondHorizonCalc
 
-2. Input Validation
-   - Observer height limits (2m-9000m)
-   - Distance limits (5km-600km)
-   - Target height validation
-   - Refraction factor validation
+## Version Control
+1. Main development branch: `dev1`
+2. Files ignored in git:
+   - `local.settings.json`
+   - `.env`
+   - Python cache files
+   - Test output files
+   - Virtual environment directories
 
-3. Target Height Calculations
-   - Basic target visibility
-   - Target height validation
+## Troubleshooting
+1. If tests fail:
+   - Verify Python virtual environment is activated
+   - Check input validation ranges
+   - Ensure correct unit conversion
 
-### Troubleshooting
-1. Port Conflicts
-   - If the default port is in use, try a different port using `--port`
-   - Common ports used: 7071-7090
+2. If API returns errors:
+   - Check request JSON format
+   - Verify input values are within allowed ranges
+   - Check local.settings.json configuration
 
-2. Common Issues
-   - Ensure Python virtual environment is activated
-   - Verify all dependencies are installed
-   - Check function.json points to correct script file
-   - Ensure local.settings.json exists with proper configuration
-
-### Troubleshooting Tips
-1. If virtual environment is not activating:
-   ```bash
-   # PowerShell may need execution policy adjustment
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-2. If dependencies are not found:
-   ```bash
-   # Reinstall dependencies
-   pip install -r requirements.txt
-   ```
-3. Common port conflicts:
-   - Check if port 7071 is in use
-   - Can be changed in local.settings.json:
-     ```json
-     {
-         "Values": {
-             "FUNCTIONS_HTTPWORKER_PORT": "7072"
-         }
-     }
-     ```
-
-### Related Documentation
-- [Azure Functions Core Tools Documentation](https://docs.microsoft.com/azure/azure-functions/functions-run-local)
-- [VS Code Azure Functions Extension Guide](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
-- [Azure CLI Documentation](https://docs.microsoft.com/cli/azure/)
+## References
+- [Azure Functions Python Guide](https://docs.microsoft.com/azure/azure-functions/functions-reference-python)
+- [Earth Curvature Calculator Documentation](https://beyondhorizons.readthedocs.io/)
+- [Testing Python Azure Functions](https://docs.microsoft.com/azure/azure-functions/functions-reference-python#unit-testing)
