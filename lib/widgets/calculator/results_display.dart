@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/models/calculation_result.dart';
+import '../../services/models/calculation_error.dart';
 import '../common/info_icon.dart';
 
 class ResultsDisplay extends StatelessWidget {
@@ -65,13 +66,13 @@ class ResultsDisplay extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: Text(
+                      child: SelectableText(
                         label,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     if (infoKey != null) ...[
-                      const SizedBox(width: 8),  // Consistent spacing
+                      const SizedBox(width: 8),
                       SizedBox(
                         width: 24,
                         child: Center(
@@ -87,7 +88,7 @@ class ResultsDisplay extends StatelessWidget {
               ),
               Expanded(
                 flex: 2,
-                child: Text(
+                child: SelectableText(
                   value,
                   textAlign: TextAlign.right,
                 ),
@@ -101,48 +102,95 @@ class ResultsDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (result == null) return const SizedBox.shrink();
+    if (result == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
         
-        return Card(
-          child: Padding(
-            padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildResultRow(
-                  'Distance to Horizon (D1)',
-                  _formatDistance(result!.horizonDistance),
-                  infoKey: 'horizon_distance',
+        Widget content;
+        if (result!.isError) {
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                'Calculation Error',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
                 ),
-                _buildResultRow(
-                  'Hidden Height (h2, XC)',
-                  _formatHeight(result!.hiddenHeight),
-                  infoKey: 'hidden_height',
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                result!.error!.message,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (result!.error!.details != null) ...[
+                const SizedBox(height: 8),
+                SelectableText(
+                  'Technical Details:',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                if (targetHeight != null) ...[
-                  _buildResultRow(
-                    'Visible Height (h3)',
-                    _formatHeight(result!.visibleTargetHeight!),
-                    infoKey: 'visible_height',
-                  ),
-                  _buildResultRow(
-                    'Apparent Visible Height (CD)',
-                    _formatHeight(result!.apparentVisibleHeight!),
-                    infoKey: 'apparent_height',
-                  ),
-                  _buildResultRow(
-                    'Perspective Scaled Apparent Visible Height',
-                    _formatHeight(result!.perspectiveScaledHeight!),
-                    infoKey: 'perspective_scaled_height',
-                  ),
-                ],
+                SelectableText(
+                  result!.error!.details!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
-            ),
-          ),
+              const SizedBox(height: 16),
+            ],
+          );
+        } else {
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildResultRow(
+                'Distance to Horizon (D1)',
+                _formatDistance(result!.horizonDistance),
+                infoKey: 'horizon_distance',
+              ),
+              _buildResultRow(
+                'Horizon Dip Angle',
+                '${result!.dipAngle?.toStringAsFixed(2) ?? 'N/A'}°',
+                infoKey: 'dip_angle',
+              ),
+              _buildResultRow(
+                'Hidden Height (h2, XC)',
+                _formatHeight(result!.hiddenHeight),
+                infoKey: 'hidden_height',
+              ),
+              if (targetHeight != null) ...[
+                _buildResultRow(
+                  'Visible Height (h3)',
+                  _formatHeight(result!.visibleTargetHeight!),
+                  infoKey: 'visible_height',
+                ),
+                _buildResultRow(
+                  'Apparent Visible Height (CD)',
+                  _formatHeight(result!.apparentVisibleHeight!),
+                  infoKey: 'apparent_height',
+                ),
+                _buildResultRow(
+                  'Perspective Scaled Apparent Visible Height',
+                  _formatHeight(result!.perspectiveScaledHeight!),
+                  infoKey: 'perspective_scaled_height',
+                ),
+              ],
+            ],
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+          child: content,
         );
       },
     );

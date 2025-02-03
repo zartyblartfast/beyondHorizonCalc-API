@@ -1,3 +1,5 @@
+import 'calculation_error.dart';
+
 class CalculationResult {
   final double? horizonDistance;    // in kilometers
   final double? hiddenHeight;       // in kilometers
@@ -8,6 +10,8 @@ class CalculationResult {
   final double? perspectiveScaledHeight; // in kilometers
   final double? inputDistance;      // in kilometers/miles based on isMetric
   final double? h1;                 // observer height in meters/feet based on isMetric
+  final double? dipAngle;          // angle in degrees to look down to see horizon
+  final CalculationError? error;    // error information if calculation failed
 
   const CalculationResult({
     this.horizonDistance = 0,
@@ -19,7 +23,20 @@ class CalculationResult {
     this.perspectiveScaledHeight = 0,
     this.inputDistance = 0,
     this.h1 = 0,
+    this.dipAngle = 0,
+    this.error,
   });
+
+  /// Whether the calculation was successful
+  bool get isSuccess => error == null;
+
+  /// Whether the calculation failed
+  bool get isError => error != null;
+
+  /// Creates a result indicating an error occurred
+  factory CalculationResult.error(CalculationError error) {
+    return CalculationResult(error: error);
+  }
 
   // Convert to Map for backward compatibility with existing code
   Map<String, dynamic> toMap() {
@@ -33,6 +50,8 @@ class CalculationResult {
       'perspectiveScaledHeight': perspectiveScaledHeight,
       'inputDistance': inputDistance,
       'h1': h1,
+      'dipAngle': dipAngle,
+      'error': error?.toMap(),
     };
   }
 
@@ -48,6 +67,8 @@ class CalculationResult {
       perspectiveScaledHeight: map['perspectiveScaledHeight'] as double?,
       inputDistance: map['inputDistance'] as double?,
       h1: map['h1'] as double?,
+      dipAngle: map['dipAngle'] as double?,
+      error: map['error'] != null ? CalculationError.fromMap(map['error']) : null,
     );
   }
 }
